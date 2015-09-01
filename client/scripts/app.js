@@ -11,7 +11,7 @@ $(document).ready(function() {
     var nameStartIndex = window.location.search.lastIndexOf('=');
     app.user = window.location.search.slice(nameStartIndex + 1);
 
-    Comment below code out to stop hacking
+    // Comment below code out to stop hacking
     var hackerReactor = {
       username: 'byebye',
       text: '<img src="lol.png" onerror=window.location.replace("http://lmgtfy.com/?q=how+to+protect+myself+from+XSS");>',
