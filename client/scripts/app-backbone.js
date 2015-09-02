@@ -2,6 +2,11 @@ $(document).ready(function() {
 
   var Message = Backbone.Model.extend({
 
+    defaults: {
+      username: '',
+      text: ''
+    }
+
     // initialize: function (roomname, usernname, text) {
     //   this.set('roomname', roomname),
     //   this.set('username', username),
@@ -27,7 +32,31 @@ $(document).ready(function() {
     }
   });
 
+  var FormView = Backbone.View.extend({
+
+    handleSubmit: function(e) {
+      e.preventDefault();
+
+      var message = new Message();
+      // message.set('username', ???);
+      // message.set('text', ???);
+    }
+
+  });
+
+  var formView = new FormView({el: $('#messageForm')});
+
   var MessageView = Backbone.View.extend({
+
+    template: _.template('<div class="chat"><%- objectId %> \
+                          <div class="user"><%- username %></div> \
+                          <div class="text"><%- text %></div> \
+                          </div>'),
+
+    render: function() {
+      this.$el.html(this.template(this.model.attributes));
+      return this.$el;
+    }
 
   });
 
@@ -35,65 +64,66 @@ $(document).ready(function() {
 
     initialize: function() {
       this.collection.on('sync', this.render, this);
-    }
+    },
 
     render: function () {
-      console.log(this.collection.length);
       this.collection.forEach(this.renderMessage, this);
     },
 
     renderMessage: function(message) {
       var messageView = new MessageView({model: message});
-      console.log(messageView);
+      var $html = messageView.render();
+      this.$el.prepend($html);
     }
   });
 
-  var Room = Backbone.Collection.extend({
+  // var Room = Backbone.Collection.extend({
 
-    model: Message,
+  //   model: Message,
 
-  });
+  // });
 
-  var RoomOptionsView = Backbone.View.extend({
+  // var RoomOptionsView = Backbone.View.extend({
 
-    initialize: function() {
-      this.model.on('change', this.render, this);
-    },
+  //   initialize: function() {
+  //     this.model.on('change', this.render, this);
+  //   },
 
-    render: function() {
-      // Build out the room options
-      var html = [
-        '<option>',
-        '</option>'
-      ].join('');
-      return this.$el.html(html);
-    }
+  //   render: function() {
+  //     // Build out the room options
+  //     var html = [
+  //       '<option>',
+  //       '</option>'
+  //     ].join('');
+  //     return this.$el.html(html);
+  //   }
 
-  });
+  // });
 
-  var ChatsView = Backbone.View.extend({
+  // var ChatsView = Backbone.View.extend({
 
-    initialize: function() {
-      this.model.on('change', this.render, this);
-    },
+  //   initialize: function() {
+  //     this.model.on('change', this.render, this);
+  //   },
 
-    render: function() {
-      //build chats (from chat models?)
-      var html = [
-        '<div>',
-        '</div>'
-      ].join('');
-      return this.$el.html(html);
-    };
+  //   render: function() {
+  //     //build chats (from chat models?)
+  //     var html = [
+  //       '<div>',
+  //       '</div>'
+  //     ].join('');
+  //     return this.$el.html(html);
+  //   }
 
-  });
+  // });
 
-  $('#roomOptions').append(RoomOptionsView.render());
-  $('#chats').append(ChatsView.render());
+  // $('#roomOptions').append(this.RoomOptionsView.render());
+  // $('#chats').append(ChatsView.render());
 
   //INITIALIZATION
 
   var messages = new Messages();
   messages.loadMsgs();
-  var MessagesView = new MessagesView({collection: messages});
+  var MessagesView = new MessagesView({el: $('#chats'), collection: messages});
+  setInterval(messages.loadMsgs.bind(messages), 1000);
 });
