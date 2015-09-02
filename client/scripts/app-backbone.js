@@ -1,10 +1,11 @@
 $(document).ready(function() {
 
   var Message = Backbone.Model.extend({
-
+    url: 'https://api.parse.com/1/classes/chatterbox',
     defaults: {
       username: '',
-      text: ''
+      text: '',
+      roomname: ''
     }
 
     // initialize: function (roomname, usernname, text) {
@@ -28,23 +29,50 @@ $(document).ready(function() {
     },
     // The Backbone parse is called everytime fetch is called
     parse: function(response, options) {
-      return response.results;
+      var results = [];
+      for (var i = response.results.length-1; i > -1; i--) {
+        results.push(response.results[i]);
+      }
+      return results;
     }
   });
 
   var FormView = Backbone.View.extend({
 
+    initialize: function () {
+      // Tp stop the spinner when the collection is in sync
+      // this.collection.on('sync', this.stopSpinner, this);
+      console.log('got here");');
+    },
+
+    events: {
+      "click #sendMessage": "handleSubmit"
+    },
+
     handleSubmit: function(e) {
       e.preventDefault();
 
-      var message = new Message();
-      // message.set('username', ???);
-      // message.set('text', ???);
+      // To start the spinner when sending a message
+      // this.startSpinner();
+
+      var $text = this.$('#textMessage');
+
+      // var newMessage = new Message(message);
+      // newMessage.save();
+
+      // Creating a model will cause an immediate "add" event to be 
+      // triggered on the collection, a "request" event as the new model 
+      // is sent to the server, as well as a "sync" event, once the server 
+      // has responded with the successful creation of the model.
+      this.collection.create({
+        username: window.location.search.substr(10),
+        text: $text.val()
+      });
+
+      $text.val('');
     }
 
   });
-
-  var formView = new FormView({el: $('#messageForm')});
 
   var MessageView = Backbone.View.extend({
 
@@ -64,6 +92,7 @@ $(document).ready(function() {
 
     initialize: function() {
       this.collection.on('sync', this.render, this);
+      this.onscreenMessages = {};
     },
 
     render: function () {
@@ -71,9 +100,11 @@ $(document).ready(function() {
     },
 
     renderMessage: function(message) {
-      var messageView = new MessageView({model: message});
-      var $html = messageView.render();
-      this.$el.prepend($html);
+      if (!this.onscreenMessages[message.get('objectId')]) {
+        var messageView = new MessageView({model: message});
+        this.$el.prepend(messageView.render());
+        this.onscreenMessages[message.get('objectId')] = true;
+      }
     }
   });
 
@@ -123,7 +154,8 @@ $(document).ready(function() {
   //INITIALIZATION
 
   var messages = new Messages();
-  messages.loadMsgs();
+  var formView = new FormView({el: $('#main'), collection: messages});
   var MessagesView = new MessagesView({el: $('#chats'), collection: messages});
   setInterval(messages.loadMsgs.bind(messages), 1000);
+  messages.loadMsgs();
 });
