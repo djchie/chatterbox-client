@@ -1,5 +1,10 @@
 $(document).ready(function() {
 
+  // TODO:
+  // Implement the Room Model
+  // Implement the Room Collection
+  // Implement the Room View
+
   var Message = Backbone.Model.extend({
     url: 'https://api.parse.com/1/classes/chatterbox',
     defaults: {
@@ -8,25 +13,21 @@ $(document).ready(function() {
       roomname: ''
     }
 
-    // initialize: function (roomname, usernname, text) {
-    //   this.set('roomname', roomname),
-    //   this.set('username', username),
-    //   this.set('text', text)
-    // }
-
-
   });
 
   var Messages = Backbone.Collection.extend({
+
     // Pass it the constructor to show what kind of models it needs to hold
     model: Message,
     // Location on the internet where it's supposed to grab it's data
     // Calling fetch() will use this url to grab data
     url: 'https://api.parse.com/1/classes/chatterbox',
     // Create a wrapper function to pass in order to an invoked fetch
+
     loadMsgs: function() {
       this.fetch({data: {order:'-createdAt'}});
     },
+
     // The Backbone parse is called everytime fetch is called
     parse: function(response, options) {
       var results = [];
@@ -35,25 +36,39 @@ $(document).ready(function() {
       }
       return results;
     }
+
   });
 
   var FormView = Backbone.View.extend({
 
     initialize: function () {
       // Tp stop the spinner when the collection is in sync
-      // this.collection.on('sync', this.stopSpinner, this);
-      console.log('got here");');
+      this.collection.on('sync', this.stopSpinner, this);
+      this.$el.find('#textMessage').keydown(function(e) {
+        if (e.keyCode == 13) {
+          e.preventDefault();
+          $(this).trigger('enter');
+        }
+      });
     },
 
     events: {
-      "click #sendMessage": "handleSubmit"
+      'click #sendMessage': 'handleSubmit',
+      'enter': 'handleSubmit'
+    },
+
+    processKey: function(e) {
+      if (e.keyCode === 13) {
+        e.preventDefault();
+        this.handleSubmit(e);
+      }
     },
 
     handleSubmit: function(e) {
       e.preventDefault();
 
       // To start the spinner when sending a message
-      // this.startSpinner();
+      this.startSpinner();
 
       var $text = this.$('#textMessage');
 
@@ -70,6 +85,16 @@ $(document).ready(function() {
       });
 
       $text.val('');
+    },
+
+    startSpinner: function() {
+      this.$('.spinner img').show();
+      this.$('form input[type=submit]').attr('disabled', "true");
+    },
+
+    stopSpinner: function() {
+      this.$('.spinner img').fadeOut('fast');
+      this.$('form input[type=submit]').attr('disabled', null);
     }
 
   });
@@ -108,50 +133,48 @@ $(document).ready(function() {
     }
   });
 
-  // var Room = Backbone.Collection.extend({
+  var Room = Backbone.Model.extend({
 
-  //   model: Message,
+    defaults: {
+      roomname: ''
+    }
 
-  // });
+  });
 
-  // var RoomOptionsView = Backbone.View.extend({
+  var Rooms = Backbone.Collection.extend({
+    model: Room,
 
-  //   initialize: function() {
-  //     this.model.on('change', this.render, this);
-  //   },
+  });
 
-  //   render: function() {
-  //     // Build out the room options
-  //     var html = [
-  //       '<option>',
-  //       '</option>'
-  //     ].join('');
-  //     return this.$el.html(html);
-  //   }
+  var RoomView = Backbone.View.extend({
 
-  // });
+    template: _.template('<option value=<%- roomname %>><%- roomname %></option'),
 
-  // var ChatsView = Backbone.View.extend({
+    render: function() {
+      this.$el.html(this.template(this.model.attributes));
+      return this.$el;
+    }
 
-  //   initialize: function() {
-  //     this.model.on('change', this.render, this);
-  //   },
+  });
 
-  //   render: function() {
-  //     //build chats (from chat models?)
-  //     var html = [
-  //       '<div>',
-  //       '</div>'
-  //     ].join('');
-  //     return this.$el.html(html);
-  //   }
+  var RoomsView = Backbon.View.extend({
 
-  // });
+    initialize: function() {
 
-  // $('#roomOptions').append(this.RoomOptionsView.render());
-  // $('#chats').append(ChatsView.render());
+    },
 
-  //INITIALIZATION
+    render: function() {
+      this.collection.forEach(this.renderRoom, this);
+    }
+
+    renderRoom: function(room) {
+      var roomView = new RoomView({model:room});
+      this.$el.prepend(roomView.render());
+    }
+
+  });
+
+  // Initialization
 
   var messages = new Messages();
   var formView = new FormView({el: $('#main'), collection: messages});
